@@ -8,16 +8,21 @@ $(document).ready(function(){
 		console.log('FOO!')
 		pedido(8,8);
 	});
+	const singlePedido=(id)=>{
+		let url=`https://gateway.marvel.com/v1/public/characters/${id}?&ts=1000&apikey=1ae821724d4abc71869f7eb192ac0797&hash=06fc9542db116b673080212346ca12b8`;
+		return url;
+	}
+	
 
 var Vehicle = Backbone.Model.extend({
 	idAttribute: "registrationNumber",
 	idAttribute:'imagen',
 	validate: function(attrs){
 		if (!attrs.registrationNumber)
-			return "Vehicle is not valid.";
+			return "supeheore is not valid.";
 	},
 	start: function(){
-		console.log("Vehicle started.");
+		console.log("started.");
 	}
 });
 
@@ -40,21 +45,30 @@ var VehicleView = Backbone.View.extend({
 		"click .delete": "onDelete",
 		"click .prevPag": "onPrev",
 		"click .next" : "onNext",
-
+		"click .back" : "onBack",
 	},
-	render: function() {
+	render: function async() {
 		$('#titleSuper').show();
 		$('#titleSuper').html('<h1>Best Superheroes of galaxy</h1>')
 		var source = $("#vehicleTemplate").html();
 		var template = _.template(source);
 		this.$el.html(template(this.model.toJSON()));
 		this.$el.attr("data-color", this.model.get("color"));
-		$('.next').show();
+		this.$el.addClass(this.model.get('className'));
+		var showm=$('.next').show();
+		// console.log(showm)
 		return this;
+	},
+	onBack:function(){
+		Backbone.history.navigate('superheroe',{trigger:true});
+		console.log('atras');
 	},
 	onDelete: function(){
 		let id=this.model.toJSON().id;
 		Backbone.history.navigate(`superheroe/${id}`,{trigger:true});
+	},
+	onBack:function(){
+		Backbone.history.navigate('superheroe',{trigger:true});
 	},
 	onNext:function(){
 	},
@@ -68,7 +82,13 @@ var VehiclesView = Backbone.View.extend({
 	initialize:function(){
 		bus.on("newVehicle", this.onNewVehicle, this);
 	},
-
+	events: {
+		"click .back" : "onBack",
+	},
+	onBack:function(){
+		Backbone.history.navigate('superheroe',{trigger:true});
+		console.log('atras');
+	},
 	render: function(){
 		this.collection.each(function(vehicle){
 			var vehicleView = new VehicleView({ model: vehicle });
@@ -134,15 +154,49 @@ var AppRouter = Backbone.Router.extend({
 		.then(response=>response.json())
 		.then(json=>{
 			json.data.results.map(item=>{
-			vehicles.push(new Car({ registrationNumber: item.name, color: "Blue",id:item.id })),
+			vehicles.push(new Car({ registrationNumber: item.name,registrationImage:item.thumbnail.path+'.jpg', color: "test",id:item.id })),
 			this.loadView(new VehiclesView({ collection: vehicles }));
 			})
 		});
+		console.log(vehicles);
 	},
-	viewSuperheroe:function(id){
-		 console.log('estamos en la siglepage',id);
-		this.loadView(new HomeView());
+	viewSuperheroe:async function(id){
+		var vehicles = new Vehicles([]);
+
+		fetch(singlePedido(id))
+		.then(response=>response.json())
+		.then(json=>{
+			json.data.results.map(async item=>{
+			vehicles.push(new Car({ registrationNumber:item.name,registrationImage:item.thumbnail.path+'.jpg', color: "blue",id:item.id,className:'SingleDiv',className:'bluex' })),
+			this.loadView(new VehiclesView({ collection: vehicles }));
+			$('.next').hide();
+			// console.log(item.stories,item.series.items.map);
+			let series=[];
+			$('.text').append(`
+								<h3>Stories:</h3>
+								<ul class="liststories"></ul>`);
+			item.stories.items.map(item=>{
+				series.push(item.name);
+				$('.liststories').append(`<li>${item.name}</li>`)
+			})
+			// console.log(series)
+			let elemento=await document.querySelector('.bluex');
+			let algo = elemento.parentElement;	
+			algo.style.display='flex';
+			$(".delete").hide();
+			$('#titleSuper').html(`<h1>${item.name}</h1>`)
+			$("#titleSuper").append(`<button><a class="back">Superheroes</a></button/>`)
+			$('.back').on('click',function(){
+				Backbone.history.navigate('superheroes',{trigger:true});
+				// console.log('algo');
+			})
+			})
+		});
+
+		
+		// this.loadView(new HomeView());
 		// let songs=new 
+
 	},
 	viewBoats: function(){
 	
